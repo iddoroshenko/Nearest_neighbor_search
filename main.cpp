@@ -9,6 +9,7 @@
 #include <thread>
 #include <random>
 #include <unordered_map>
+#include <queue>
 #include "tqdm.h"
 
 uint32_t maxAge = 1;
@@ -96,45 +97,46 @@ int addNewPoint(const Point& newPoint, const Points& points, const adjacency_lis
 std::vector<int> findKNN(const Point& newPoint, const Points& points, const adjacency_list& v) {
     int indexStartPoint = rand() % points.size();
     long double dist = calculateDistance(points[indexStartPoint], newPoint);
-    std::set<std::pair<long double, int>> candidates;
-    candidates.insert({dist, indexStartPoint});
+    std::priority_queue<std::pair<long double, int>, std::vector<std::pair<long double, int>>, std::greater<std::pair<long double, int>>> candidates;
+    candidates.push({dist, indexStartPoint});
 
     std::unordered_map<int,int> visitedPoints;
-    visitedPoints[indexStartPoint] = true;
+    visitedPoints[indexStartPoint] = 1;
 
-    std::set<std::pair<long double, int>> topKNearestPoints;
-    topKNearestPoints.insert({dist, indexStartPoint});
+    std::priority_queue<std::pair<long double, int>> topKNearestPoints;
 
     while(!candidates.empty()) {
-        auto currentPoint = *candidates.begin();
-        candidates.erase(candidates.begin());
+        auto currentPoint = candidates.top();
+        candidates.pop();
 
-        topKNearestPoints.insert(currentPoint);
+        topKNearestPoints.push(currentPoint);
         if(topKNearestPoints.size() == K + 1) {
-            if (prev(topKNearestPoints.end())->second == currentPoint.second) {
-                topKNearestPoints.erase(prev(topKNearestPoints.end()));
+            if (topKNearestPoints.top().second == currentPoint.second) {
+                topKNearestPoints.pop();
                 break;
             }
-            topKNearestPoints.erase(prev(topKNearestPoints.end()));
+            topKNearestPoints.pop();
         }
         for(const Edge& edge : v[currentPoint.second]) {
             if(!visitedPoints[edge.dest]) {
-                visitedPoints[edge.dest] = true;
+                visitedPoints[edge.dest] = 1;
                 dist = calculateDistance(points[edge.dest], newPoint);
-                candidates.insert({dist, edge.dest});
+                candidates.push({dist, edge.dest});
             }
         }
     }
     std::vector<int> result;
     result.reserve(K);
-    for(auto & x : topKNearestPoints) {
-        result.push_back(x.second);
+    while(!topKNearestPoints.empty()) {
+        result.push_back(topKNearestPoints.top().second);
+        topKNearestPoints.pop();
     }
+    std::reverse(result.begin(), result.end());
     return result;
 }
 
 int main() {
-    srand(time(NULL));
+    srand(time(nullptr));
     auto inputFilePath = "../sample.txt";
     std::ifstream file(inputFilePath);
     if (file.is_open()) {
@@ -154,7 +156,7 @@ int main() {
         std::mt19937 g(rd());
         std::shuffle(v.begin(), v.end(), g);
         */
-        std::cout << "\nConstructing data stucture... " << inputFilePath << '\n';
+        std::cout << "\nConstructing data structure... " << inputFilePath << '\n';
         auto graph = constructGraph_Naive(v);
         std::cout << "\nDone!\n";
         std::cout << addNewPoint(Point({1000, 395}), v, graph) + 1<< '\n';
