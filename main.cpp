@@ -150,6 +150,21 @@ std::vector<int> findKNearestNeighbors(const Point& newPoint, const Points& poin
     return result;
 }
 
+std::vector<int> findKNearestNeighbors_Naive(const Point& newPoint, const Points& points) {
+    std::priority_queue<std::pair<long double, int>, std::vector<std::pair<long double, int>>,
+                        std::greater<std::pair<long double, int>>> topKNearestPoints;
+
+    for(int i = 0; i < points.size(); ++i) {
+        topKNearestPoints.push({calculateDistance(newPoint, points[i]), i});
+    }
+
+    std::vector<int> result(K);
+    for(int i = 0; i < K; i++){
+        result[i] = topKNearestPoints.top().second;
+        topKNearestPoints.pop();
+    }
+    return result;
+}
 int main() {
     srand(time(nullptr));
     auto inputFilePath = "../sample.txt";
@@ -179,6 +194,10 @@ int main() {
         std::cout << findOneNearestNeighbor(Point({1000, 395}, id), points, graph) + 1 << '\n';
 
         auto knn = findKNearestNeighbors(Point({1000, 395}, id), points, graph);
+        for(auto x : knn)
+            std::cout << points[x].id + 1<< " " ;
+        knn = findKNearestNeighbors_Naive(Point({1000, 395}, id), points);
+        std::cout << '\n';
         for(auto x : knn)
             std::cout << points[x].id + 1<< " " ;
 
