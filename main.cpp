@@ -5,10 +5,13 @@
 #include <set>
 #include <ctime>
 #include <algorithm>
+#include <chrono>
+#include <thread>
+#include "tqdm.h"
 
 uint32_t maxAge = 1;
 
-struct Edge{
+struct Edge {
     Edge(uint32_t _id, uint32_t _dest) : id(_id), dest(_dest), age(floor(std::log2(id))) {
         maxAge = std::max(age,maxAge);
     }
@@ -33,8 +36,11 @@ long double calculateDistance (const Point& point1, const Point& point2) {
 }
 
 adjacency_list constructGraph_Naive(const Points& points) {
+    using namespace std::this_thread; // sleep_for, sleep_until
+    using namespace std::chrono; // nanoseconds, system_clock, seconds
     adjacency_list result(points.size());
     int id = 1;
+    tqdm bar;
     for(int i = 0; i < points.size(); ++i) {
         std::set<std::pair<int,int>> nearestK;
         for(int j = 0; j < points.size(); ++j) {
@@ -48,6 +54,9 @@ adjacency_list constructGraph_Naive(const Points& points) {
             result[i].push_back(Edge(id, x.second));
             id++;
         }
+
+        sleep_for(nanoseconds(100000000));
+        bar.progress(i, points.size());
     }
     return result;
 }
@@ -83,16 +92,30 @@ int addNewPoint(const Point& newPoint, const Points& points, const adjacency_lis
 }
 
 int main() {
-    srand(time(nullptr));
-    std::ifstream file("../sample.txt");
-    int n;
-    file >> n;
-    Points v(n);
-    for(auto& x : v) {
-        x.resize(2);
-        file >> x[0] >> x[1];
+    auto inputFilePath = "../sample.txt";
+    std::ifstream file(inputFilePath);
+    if (file.is_open()) {
+        std::cout << "\nReading file " << inputFilePath << '\n';
+        int n;
+        file >> n;
+        Points v(n);
+        std::cout << "n: " << n << "\n";
+        for(auto& x : v) {
+            x.resize(2);
+            file >> x[0] >> x[1];
+        }
+        file.close();
+        std::cout << "The file has been read" << '\n';
+
+        std::cout << "\nConstructing data stucture... " << inputFilePath << '\n';
+        auto graph = constructGraph_Naive(v);
+        std::cout << "\nDone!\n";
+        std::cout << addNewPoint(Point(1000, 395), v, graph) << '\n';
+
+        return 0;
+    } else {
+        std::cout << "Unable to open file " << inputFilePath << '\n';
+        return 1;
     }
-    auto graph = constructGraph_Naive(v);
-    std::cout << addNewPoint(Point(1000, 395), v, graph);
-    return 0;
+
 }
