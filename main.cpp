@@ -8,6 +8,7 @@
 #include <chrono>
 #include <thread>
 #include <random>
+#include <unordered_map>
 #include "tqdm.h"
 
 uint32_t maxAge = 1;
@@ -98,7 +99,7 @@ std::vector<int> findKNN(const Point& newPoint, const Points& points, const adja
     std::set<std::pair<long double, int>> candidates;
     candidates.insert({dist, indexStartPoint});
 
-    std::vector<bool> visitedPoints(points.size(), false);
+    std::unordered_map<int,int> visitedPoints;
     visitedPoints[indexStartPoint] = true;
 
     std::set<std::pair<long double, int>> topKNearestPoints;
