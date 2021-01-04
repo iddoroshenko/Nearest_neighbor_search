@@ -380,6 +380,9 @@ nbdist/
 .idea/**/usage.statistics.xml
 .idea/**/dictionaries
 .idea/**/shelf
+.idea/**/.gitignore
+.idea/**/deployment.xml
+.idea/**/misc.xml
 
 # Generated files
 .idea/**/contentModel.xml
