@@ -1,4 +1,5 @@
 #include <iostream>
+#include <utility>
 #include <vector>
 #include <cmath>
 #include <fstream>
@@ -23,7 +24,21 @@ struct Edge {
     uint32_t age;
 };
 
-using Point = std::vector<int>;
+struct Point{
+    std::vector<int> coordinates;
+    uint32_t id{};
+
+    Point() = default;
+    Point(std::vector<int> _coordinates, int _id) : coordinates(std::move(_coordinates)), id(_id) {}
+
+    const int& operator[](uint32_t index) const {
+        return coordinates[index];
+    }
+    int& operator[](uint32_t index) {
+        return coordinates[index];
+    }
+};
+
 using Points = std::vector<Point>;
 using adjacency_list = std::vector<std::vector<Edge>>;
 const int K = 5;
@@ -31,7 +46,7 @@ const int K = 5;
 // Euclidean distance
 long double calculateDistance (const Point& point1, const Point& point2) {
     uint64_t distance = 0;
-    size_t size = point1.size();
+    size_t size = point1.coordinates.size();
     for(int i = 0; i < size; ++i) {
         distance += int64_t(point1[i] - point2[i]) * int64_t(point1[i] - point2[i]);
     }
@@ -64,7 +79,7 @@ adjacency_list constructGraph_Naive(const Points& points) {
     return result;
 }
 
-int addNewPoint(const Point& newPoint, const Points& points, const adjacency_list& v) {
+int findOneNearestNeighbor(const Point& newPoint, const Points& points, const adjacency_list& v) {
     int indexCurPoint = rand() % points.size();
     uint32_t curAge = 1;
     long double curDistance = calculateDistance(newPoint, points[indexCurPoint]);
@@ -94,7 +109,7 @@ int addNewPoint(const Point& newPoint, const Points& points, const adjacency_lis
     return indexCurPoint;
 }
 
-std::vector<int> findKNN(const Point& newPoint, const Points& points, const adjacency_list& v) {
+std::vector<int> findKNearestNeighbors(const Point& newPoint, const Points& points, const adjacency_list& v) {
     int indexStartPoint = rand() % points.size();
     long double dist = calculateDistance(points[indexStartPoint], newPoint);
     std::priority_queue<std::pair<long double, int>, std::vector<std::pair<long double, int>>, std::greater<std::pair<long double, int>>> candidates;
@@ -143,11 +158,13 @@ int main() {
         std::cout << "\nReading file " << inputFilePath << '\n';
         int n;
         file >> n;
-        Points v(n);
+        Points points(n);
         std::cout << "n: " << n << "\n";
-        for(auto& x : v) {
-            x.resize(2);
+        int id = 0;
+        for(auto& x : points) {
+            x.coordinates.resize(2);
             file >> x[0] >> x[1];
+            x.id = id++;
         }
         file.close();
         std::cout << "The file has been read" << '\n';
@@ -157,13 +174,13 @@ int main() {
         std::shuffle(v.begin(), v.end(), g);
         */
         std::cout << "\nConstructing data structure... " << inputFilePath << '\n';
-        auto graph = constructGraph_Naive(v);
+        auto graph = constructGraph_Naive(points);
         std::cout << "\nDone!\n";
-        std::cout << addNewPoint(Point({1000, 395}), v, graph) + 1<< '\n';
+        std::cout << findOneNearestNeighbor(Point({1000, 395}, id), points, graph) + 1 << '\n';
 
-        auto knn = findKNN(Point({1000, 395}), v, graph);
+        auto knn = findKNearestNeighbors(Point({1000, 395}, id), points, graph);
         for(auto x : knn)
-            std::cout << x + 1<< " " ;
+            std::cout << points[x].id + 1<< " " ;
 
         return 0;
     } else {
