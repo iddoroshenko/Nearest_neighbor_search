@@ -63,7 +63,7 @@ adjacency_list constructGraph_Naive(const Points& points) {
         std::set<std::pair<int,int>> nearestK;
         for(int j = 0; j < points.size(); ++j) {
             if(i == j) continue;
-            nearestK.insert({calculateDistance(points[i], points[j]), j});
+            nearestK.insert({calculateDistance(points[i], points[j]), points[j].id });
             if(nearestK.size() == K + 1) {
                 nearestK.erase(prev(nearestK.end()));
             }
@@ -110,6 +110,8 @@ int findOneNearestNeighbor(const Point& newPoint, const Points& points, const ad
 }
 
 std::vector<int> findKNearestNeighbors(const Point& newPoint, const Points& points, const adjacency_list& v) {
+    if (points.empty())
+        return {};
     int indexStartPoint = rand() % points.size();
     long double dist = calculateDistance(points[indexStartPoint], newPoint);
     std::priority_queue<std::pair<long double, int>, std::vector<std::pair<long double, int>>, std::greater<std::pair<long double, int>>> candidates;
@@ -165,6 +167,24 @@ std::vector<int> findKNearestNeighbors_Naive(const Point& newPoint, const Points
     }
     return result;
 }
+
+adjacency_list constructGraph(const Points& points) {
+    adjacency_list result(points.size());
+    int edgeId = 1;
+    Points newPoints;
+    newPoints.reserve(points.size());
+    for(int i = 0; i < points.size(); ++i) {
+        auto knn = findKNearestNeighbors(points[i], newPoints, result);
+        for(auto x : knn) {
+            result[i].push_back(Edge(edgeId, points[x].id));
+            result[points[x].id].push_back(Edge(edgeId, i));
+            edgeId++;
+        }
+        newPoints.push_back(points[i]);
+    }
+    return result;
+}
+
 int main() {
     srand(time(nullptr));
     auto inputFilePath = "../sample.txt";
@@ -189,7 +209,7 @@ int main() {
         std::shuffle(v.begin(), v.end(), g);
         */
         std::cout << "\nConstructing data structure... " << inputFilePath << '\n';
-        auto graph = constructGraph_Naive(points);
+        auto graph = constructGraph(points);
         std::cout << "\nDone!\n";
         std::cout << findOneNearestNeighbor(Point({1000, 395}, id), points, graph) + 1 << '\n';
 
