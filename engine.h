@@ -33,14 +33,17 @@ private:
 };
 
 struct Point {
-    std::vector<int> coordinates;
     uint32_t id{};
+    std::vector<int> coordinates;
 
     Point() = default;
     Point(std::vector<int> _coordinates, int _id) : coordinates(std::move(_coordinates)), id(_id) {}
 
     const int& operator[](uint32_t index) const;
     int& operator[](uint32_t index);
+    bool operator<(const Point& point2) const {
+        return id < point2.id;
+    }
 };
 
 using Points = std::vector<Point>;
@@ -73,14 +76,22 @@ public:
 
     void setPoints(const Points& newPoints);
 
+    Points getPoints() const;
+
+    // Brute-force
     void constructGraph_Naive();
 
     void constructGraph();
 
+    // Using age of edges
     Point findOneNearestNeighbor(const Point& newPoint);
 
+    // nsw (msw)
     std::vector<int> findKNearestNeighbors(const Point& newPoint);
 
+    std::vector<int> findKNearestNeighborsMultiStart(const Point& newPoint);
+
+    // Brute-force
     std::vector<int> findKNearestNeighbors_Naive(const Point& newPoint);
 
     void addPoint(const Point& point);

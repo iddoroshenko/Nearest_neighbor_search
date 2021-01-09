@@ -41,6 +41,10 @@ void AlgorithmKNN::setPoints(const Points& newPoints) {
     graph.resize(points.size());
 }
 
+Points AlgorithmKNN::getPoints() const {
+    return points;
+}
+
 void AlgorithmKNN::constructGraph_Naive() {
     using namespace std::this_thread; // sleep_for, sleep_until
     using namespace std::chrono; // nanoseconds, system_clock, seconds
@@ -70,16 +74,16 @@ void AlgorithmKNN::constructGraph() {
     using namespace std::this_thread; // sleep_for, sleep_until
     using namespace std::chrono; // nanoseconds, system_clock, seconds
     tqdm bar;
-    graph.resize(points.size());
+    graph.resize(std::max_element(points.begin(), points.end())->id);
     int edgeId = 1;
     Points allPoints = points;
     points.clear();
     points.reserve(allPoints.size());
     for(int i = 0; i < allPoints.size(); ++i) {
-        auto knn = findKNearestNeighbors(allPoints[i]);
+        auto knn = findKNearestNeighborsMultiStart(allPoints[i]);
         for(auto x : knn) {
-            graph[i].push_back(Edge(edgeId, allPoints[x].id));
-            graph[allPoints[x].id].push_back(Edge(edgeId, i));
+            graph[allPoints[i].id].push_back(Edge(edgeId, allPoints[x].id));
+            graph[allPoints[x].id].push_back(Edge(edgeId, allPoints[i].id));
             edgeId++;
         }
         points.push_back(allPoints[i]);
@@ -159,6 +163,29 @@ std::vector<int> AlgorithmKNN::findKNearestNeighbors(const Point& newPoint) {
     }
     std::reverse(result.begin(), result.end());
     return result;
+}
+
+std::vector<int> AlgorithmKNN::findKNearestNeighborsMultiStart(const Point& newPoint) {
+    const int repeat = 10;
+    std::unordered_map<int, int> counter;
+    for(int i = 0; i < repeat; ++i) {
+        auto x = findKNearestNeighbors(newPoint);
+        for(auto point : x) {
+            ++counter[point];
+        }
+    }
+    std::vector<std::pair<int,int>> t;
+    t.reserve(counter.size());
+    for(auto x : counter) {
+        t.emplace_back(x.second, x.first);
+    }
+    std::sort(t.rbegin(), t.rend());
+    std::vector<int> result(K);
+    for(int i = 0; i < std::min(size_t(K), t.size()); ++i) {
+        result[i] = t[i].second;
+    }
+    return result;
+
 }
 
 std::vector<int> AlgorithmKNN::findKNearestNeighbors_Naive(const Point& newPoint) {

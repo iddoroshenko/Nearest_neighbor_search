@@ -111,106 +111,54 @@ static size_t getCurrentRSS() {
 #endif
 }
 
-void get_gt(unsigned int *massQA, size_t qsize, std::vector<std::priority_queue<std::pair<int, labeltype >>> &answers, size_t k) {
-    (std::vector<std::priority_queue<std::pair<int, labeltype >>>(qsize)).swap(answers);
-    std::cout << qsize << "\n";
-    for (int i = 0; i < qsize; i++) {
-        for (int j = 0; j < k; j++) {
-            answers[i].emplace(0.0f, massQA[1000 * i + j]);
+void check_accuracy(Points& points) {
+    AlgorithmKNN algorithmKnn_Naive;
+    AlgorithmKNN algorithmKnn;
+    const size_t NumPoints = 1000;
+    const size_t NumPointsToCheck = 100;
+    Points checkPoints;
+    checkPoints.reserve(NumPoints);
+    int id = 0;
+    for(int i = 0; i < NumPoints; i++) {
+        int randId = rand() % points.size();
+        checkPoints.push_back(Point(points[randId].coordinates, id++));
+    }
+    algorithmKnn.setPoints(checkPoints);
+    algorithmKnn.constructGraph();
+
+    algorithmKnn_Naive.setPoints(checkPoints);
+    algorithmKnn_Naive.constructGraph_Naive();
+
+    long double accuracy = 0;
+    for(int i = 0; i < NumPointsToCheck; i++) {
+        int randId = rand() % checkPoints.size();
+        auto v1 = algorithmKnn.findKNearestNeighborsMultiStart(points[randId]);
+        auto v2 = algorithmKnn_Naive.findKNearestNeighbors_Naive(points[randId]);
+
+        std::unordered_set<int> pp(v2.begin(), v2.end());
+        for(auto x : v1) {
+            if(pp.find(x) != pp.end()) {
+                accuracy++;
+            }
         }
     }
-}
 
+    std::cout << "Accuracy: " << accuracy / (5 * NumPointsToCheck) << std::endl;
 
-
-float
-test_approx(unsigned char *massQ, size_t vecsize, size_t qsize, size_t vecdim,
-            std::vector<std::priority_queue<std::pair<int, labeltype >>> &answers, AlgorithmKNN& algorithmKnn) {
-    size_t correct = 0;
-    size_t total = 0;
-    //uncomment to test in parallel mode:
-    //#pragma omp parallel for
-    for (int i = 0; i < qsize; i++) {
-        auto top_candidates = algorithmKnn.findKNearestNeighbors(Point(std::vector<int>(massQ + vecdim * i, massQ + vecdim * (i+1)), 0));
-
-        std::priority_queue<std::pair<int, labeltype >> gt(answers[i]);
-        std::unordered_set<labeltype> g;
-        total += gt.size();
-
-        while (!gt.empty()) {
-            g.insert(gt.top().second);
-            gt.pop();
-        }
-
-        for (auto x : top_candidates) {
-
-            if (g.find(x) != g.end())
-                correct++;
-        }
-
-    }
-    return 1.0f * correct / total;
-}
-
-void
-test_vs_recall(unsigned char *massQ, size_t vecsize, size_t qsize, size_t vecdim,
-               std::vector<std::priority_queue<std::pair<int, labeltype >>> &answers, size_t k, AlgorithmKNN& algorithmKnn) {
-    std::vector<size_t> efs;// = { 10,10,10,10,10 };
-    for (int i = k; i < 30; i++) {
-        efs.push_back(i);
-    }
-    for (int i = 30; i < 100; i += 10) {
-        efs.push_back(i);
-    }
-    for (int i = 100; i < 500; i += 40) {
-        efs.push_back(i);
-    }
-    for (size_t ef : efs) {
-        StopW stopw = StopW();
-
-        float recall = test_approx(massQ, vecsize, qsize, vecdim, answers, algorithmKnn);
-        float time_us_per_query = stopw.getElapsedTimeMicro() / qsize;
-
-        std::cout << ef << "\t" << recall << "\t" << time_us_per_query << " us\n";
-        if (recall > 1.0) {
-            std::cout << recall << "\t" << time_us_per_query << " us\n";
-            break;
-        }
-    }
 }
 
 int sift_test1B() {
     int subset_size_millions = 1;
 
-
     size_t vecsize = subset_size_millions * 1000000;
 
     size_t qsize = 10000;
     size_t vecdim = 128;
-    char path_gt[1024];
     char *path_q = "../bigann/bigann_query.bvecs";
     char *path_data = "../bigann/bigann_base.bvecs";
 
-    sprintf(path_gt, "../bigann/gnd/idx_%dM.ivecs", subset_size_millions);
-
-
     auto *massb = new unsigned char[vecdim];
 
-    std::cout << "Loading GT:\n";
-    std::ifstream inputGT(path_gt, std::ios::binary);
-    auto *massQA = new unsigned int[qsize * 1000];
-    for (int i = 0; i < qsize; i++) {
-        int t;
-        inputGT.read((char *) &t, 4);
-        inputGT.read((char *) (massQA + 1000 * i), t * 4);
-        if (t != 1000) {
-            std::cout << "err";
-            return 1;
-        }
-    }
-    inputGT.close();
-
-    std::vector<int> gt_v(massQA, massQA + qsize * 1000);
     std::cout << "Loading queries:\n";
     auto *massQ = new unsigned char[qsize * vecdim];
     std::ifstream inputQ(path_q, std::ios::binary);
@@ -229,71 +177,47 @@ int sift_test1B() {
 
     }
     inputQ.close();
-    std::vector<unsigned char > q_v(massQ, massQ + qsize * vecdim);
 
     std::ifstream input(path_data, std::ios::binary);
     int in = 0;
 
-
     std::cout << "Actual memory usage: " << getCurrentRSS() / 1000000 << " Mb \n";
 
-
-    int j1 = 0;
     StopW stopw = StopW();
     StopW stopw_full = StopW();
-    size_t report_every = 100000;
 
-
-    AlgorithmKNN algorithmKnn(1000);
+    AlgorithmKNN algorithmKnn(5);
     Points points;
     points.reserve(vecsize);
 
     int pointId = 0;
 
-#pragma omp parallel for
     for (int i = 0; i < vecsize; i++) {
         unsigned char mass[128];
-#pragma omp critical
-        {
 
-            input.read((char *) &in, 4);
-            if (in != 128) {
-                std::cout << "file error";
-                exit(1);
-            }
-            input.read((char *) massb, in);
-            for (int j = 0; j < vecdim; j++) {
-                mass[j] = massb[j];
-            }
-            j1++;
-            if (j1 % report_every == 0) {
-                std::cout << j1 / (0.01 * vecsize) << " %, "
-                          << report_every / (1000.0 * 1e-6 * stopw.getElapsedTimeMicro()) << " kips " << " Mem: "
-                          << getCurrentRSS() / 1000000 << " Mb \n";
-                stopw.reset();
-            }
+        input.read((char *) &in, 4);
+        if (in != 128) {
+            std::cout << "file error";
+            exit(1);
         }
-        //points.emplace_back(Point(std::vector<int>(mass, mass + vecdim), pointId++));
-        algorithmKnn.addPoint(Point(std::vector<int>(mass, mass + vecdim), pointId++));
+        input.read((char *) massb, in);
+        for (int j = 0; j < vecdim; j++) {
+            mass[j] = massb[j];
+        }
+
+        points.emplace_back(Point(std::vector<int>(mass, mass + vecdim), pointId++));
+        //algorithmKnn.addPoint(Point(std::vector<int>(mass, mass + vecdim), pointId++));
     }
     input.close();
     /*algorithmKnn.setPoints(points);
     algorithmKnn.constructGraph();*/
-    std::cout << "Build time:" << 1e-6 * stopw_full.getElapsedTimeMicro() << "  seconds\n";
-
-
-
+    //std::cout << "Build time:" << 1e-6 * stopw_full.getElapsedTimeMicro() << "  seconds\n";
 
     std::vector<std::priority_queue<std::pair<int, labeltype >>> answers;
     size_t k = 1;
-    std::cout << "Parsing gt:\n";
-    get_gt(massQA, qsize, answers, k);
-    std::cout << "Loaded gt\n";
     std::cout << "count: " << algorithmKnn.getCallDistanceCounter() << std::endl;
 
-    test_vs_recall(massQ, vecsize, qsize, vecdim, answers, k, algorithmKnn);
-
-
+    check_accuracy(points);
     std::cout << "Actual memory usage: " << getCurrentRSS() / 1000000 << " Mb \n";
     return 0;
 
