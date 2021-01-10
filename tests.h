@@ -115,7 +115,7 @@ void check_accuracy(Points& points) {
     AlgorithmKNN algorithmKnn_Naive;
     AlgorithmKNN algorithmKnn;
     const size_t NumPoints = 1000;
-    const size_t NumPointsToCheck = 100;
+    const size_t NumPointsToCheck = 10;
     Points checkPoints;
     checkPoints.reserve(NumPoints);
     int id = 0;
@@ -147,6 +147,34 @@ void check_accuracy(Points& points) {
 
 }
 
+void check_accuracy2(Points& points, const std::vector<std::vector<int>>& queries, const std::vector<std::vector<int>>& answers) {
+    AlgorithmKNN algorithmKnn_Naive;
+    AlgorithmKNN algorithmKnn;
+    const size_t NumPoints = points.size();
+    const size_t NumPointsToCheck = queries.size();
+    Points checkPoints;
+    checkPoints.reserve(NumPoints);
+    for(int i = 0; i < NumPoints; i++) {
+        checkPoints.push_back(Point(points[i].coordinates, i));
+    }
+    algorithmKnn.setPoints(checkPoints);
+    algorithmKnn.constructGraph();
+
+    long double accuracy = 0;
+    for(int i = 0; i < NumPointsToCheck; i++) {
+        auto v1 = algorithmKnn.findKNearestNeighborsMultiStart(Point(queries[i], i));
+
+        std::unordered_set<int> pp(answers[i].begin(), answers[i].end());
+        for(auto x : v1) {
+            if(pp.find(x) != pp.end()) {
+                accuracy++;
+            }
+        }
+    }
+
+    std::cout << "Accuracy: " << accuracy / (5 * NumPointsToCheck) << std::endl;
+
+}
 int sift_test1B() {
     int subset_size_millions = 1;
 
@@ -156,13 +184,34 @@ int sift_test1B() {
     size_t vecdim = 128;
     char *path_q = "../bigann/bigann_query.bvecs";
     char *path_data = "../bigann/bigann_base.bvecs";
-
+    char path_gt[1024];
+    sprintf(path_gt, "../bigann/gnd/idx_%dM.ivecs", subset_size_millions);
     auto *massb = new unsigned char[vecdim];
 
+
+    std::cout << "Loading GT:\n";
+    std::ifstream inputGT(path_gt, std::ios::binary);
+    auto *massQA = new unsigned int[qsize * 1000];
+    for (int i = 0; i < qsize; i++) {
+        int t;
+        inputGT.read((char *) &t, 4);
+        inputGT.read((char *) (massQA + 1000 * i), t * 4);
+        if (t != 1000) {
+            std::cout << "err";
+            return 0;
+        }
+    }
+    inputGT.close();
+
+    std::vector<std::vector<int>> answers(qsize, std::vector<int>(5));
+    for(int i = 0; i < qsize; ++i)
+        for(int j = 0; j < 5; ++j)
+            answers[i][j] = massQA[i*1000 + j];
+
     std::cout << "Loading queries:\n";
-    auto *massQ = new unsigned char[qsize * vecdim];
     std::ifstream inputQ(path_q, std::ios::binary);
 
+    std::vector<std::vector<int>> queries(qsize, std::vector<int>(vecdim));
     for (int i = 0; i < qsize; i++) {
         int in = 0;
         inputQ.read((char *) &in, 4);
@@ -172,7 +221,7 @@ int sift_test1B() {
         }
         inputQ.read((char *) massb, in);
         for (int j = 0; j < vecdim; j++) {
-            massQ[i * vecdim + j] = massb[j];
+            queries[i][j] = massb[j];
         }
 
     }
@@ -213,11 +262,10 @@ int sift_test1B() {
     algorithmKnn.constructGraph();*/
     //std::cout << "Build time:" << 1e-6 * stopw_full.getElapsedTimeMicro() << "  seconds\n";
 
-    std::vector<std::priority_queue<std::pair<int, labeltype >>> answers;
     size_t k = 1;
     std::cout << "count: " << algorithmKnn.getCallDistanceCounter() << std::endl;
 
-    check_accuracy(points);
+    check_accuracy2(points, queries,answers);
     std::cout << "Actual memory usage: " << getCurrentRSS() / 1000000 << " Mb \n";
     return 0;
 
