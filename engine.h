@@ -47,7 +47,7 @@ struct Point {
 };
 
 using Points = std::vector<Point>;
-using adjacency_list = std::vector<std::vector<Edge>>;
+using adjacency_list = std::unordered_map<uint32_t, std::vector<Edge>>;
 
 class Distance {
 private:
@@ -71,8 +71,12 @@ private:
     adjacency_list graph;
     Points points;
     int K = 5;
+
+private:
+    bool check(const Point& newPoint, const Point& oldPoint, int k = -1);
+
 public:
-    AlgorithmKNN(int newK = 5) : K(newK) { graph.resize(1000000); }
+    AlgorithmKNN(int newK = 5) : K(newK) {}
 
     void setPoints(const Points& newPoints);
 
@@ -83,13 +87,15 @@ public:
 
     void constructGraph();
 
+    void constructGraph_reverseKNN();
+
     // Using age of edges
     Point findOneNearestNeighbor(const Point& newPoint);
 
     // nsw (msw)
-    std::vector<int> findKNearestNeighbors(const Point& newPoint);
+    std::vector<int> findKNearestNeighbors(const Point& newPoint, int k = -1);
 
-    std::vector<int> findKNearestNeighborsMultiStart(const Point& newPoint);
+    std::vector<int> findKNearestNeighborsMultiStart(const Point& newPoint, int k = -1);
 
     // Brute-force
     std::vector<int> findKNearestNeighbors_Naive(const Point& newPoint);

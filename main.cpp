@@ -2,5 +2,5 @@
 
 int main() {
     srand(time(nullptr));
-    sift_test1B();
+    sample();
 }

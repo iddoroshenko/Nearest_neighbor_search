@@ -33,15 +33,16 @@ int sample() {
         std::cout << "\nConstructing data structure... " << inputFilePath << '\n';
         AlgorithmKNN algorithmKnn;
         algorithmKnn.setPoints(points);
-        algorithmKnn.constructGraph();
+        algorithmKnn.constructGraph_reverseKNN();
         std::cout << "\nDone!\n";
-        std::cout << algorithmKnn.findOneNearestNeighbor(Point({1000, 395}, id)).id + 1 << '\n';
+        //std::cout << algorithmKnn.findOneNearestNeighbor(Point({1000, 395}, id)).id + 1 << '\n';
 
         auto knn = algorithmKnn.findKNearestNeighbors(Point({1000, 395}, id));
+        std::cout << "\nActual:\t\t";
         for(auto x : knn)
             std::cout << points[x].id + 1<< " " ;
         knn = algorithmKnn.findKNearestNeighbors_Naive(Point({1000, 395}, id));
-        std::cout << '\n';
+        std::cout << "\nExpected:\t";
         for(auto x : knn)
             std::cout << points[x].id + 1<< " " ;
 
@@ -158,7 +159,7 @@ void check_accuracy2(Points& points, const std::vector<std::vector<int>>& querie
         checkPoints.push_back(Point(points[i].coordinates, i));
     }
     algorithmKnn.setPoints(checkPoints);
-    algorithmKnn.constructGraph();
+    algorithmKnn.constructGraph_reverseKNN();
 
     long double accuracy = 0;
     for(int i = 0; i < NumPointsToCheck; i++) {
