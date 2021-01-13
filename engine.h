@@ -21,8 +21,9 @@
 
 struct Edge {
 public:
-    Edge(uint32_t _id, uint32_t _dest) : id(_id), dest(_dest), age(floor(std::log2(id))) {
+    Edge(uint32_t _dest) : id(edgeNextId), dest(_dest), age(floor(std::log2(id))) {
         maxAge = std::max(age,maxAge);
+        ++edgeNextId;
     }
     uint32_t id;
     uint32_t dest;
@@ -30,6 +31,7 @@ public:
 
 private:
     static uint32_t maxAge;
+    static uint32_t edgeNextId;
 };
 
 struct Point {
@@ -71,9 +73,8 @@ private:
     adjacency_list graph;
     Points points;
     int K = 5;
-
 private:
-    bool check(const Point& newPoint, const Point& oldPoint, int k = -1);
+    bool isPointTheNeighbor(const Point& newPoint, const Point& oldPoint, int k = -1);
 
 public:
     AlgorithmKNN(int newK = 5) : K(newK) {}
