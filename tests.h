@@ -8,51 +8,6 @@
 #include <unordered_set>
 #include "engine.h"
 
-int sample() {
-    auto inputFilePath = "../sample.txt";
-    std::ifstream file(inputFilePath);
-    if (file.is_open()) {
-        std::cout << "\nReading file " << inputFilePath << '\n';
-        int n;
-        file >> n;
-        Points points(n);
-        std::cout << "n: " << n << "\n";
-        int id = 0;
-        for(auto& x : points) {
-            x.coordinates.resize(2);
-            file >> x[0] >> x[1];
-            x.id = id++;
-        }
-        file.close();
-        std::cout << "The file has been read" << '\n';
-        /*
-        std::random_device rd;
-        std::mt19937 g(rd());
-        std::shuffle(v.begin(), v.end(), g);
-        */
-        std::cout << "\nConstructing data structure... " << inputFilePath << '\n';
-        AlgorithmKNN algorithmKnn;
-        algorithmKnn.setPoints(points);
-        algorithmKnn.constructGraph_reverseKNN();
-        std::cout << "\nDone!\n";
-        //std::cout << algorithmKnn.findOneNearestNeighbor(Point({1000, 395}, id)).id + 1 << '\n';
-
-        auto knn = algorithmKnn.findKNearestNeighbors(Point({1000, 395}, id));
-        std::cout << "\nActual:\t\t";
-        for(auto x : knn)
-            std::cout << points[x].id + 1<< " " ;
-        knn = algorithmKnn.findKNearestNeighbors_Naive(Point({1000, 395}, id));
-        std::cout << "\nExpected:\t";
-        for(auto x : knn)
-            std::cout << points[x].id + 1<< " " ;
-
-        return 0;
-    } else {
-        std::cout << "Unable to open file " << inputFilePath << '\n';
-        return 1;
-    }
-}
-
 using labeltype = size_t;
 
 class StopW {
@@ -125,7 +80,7 @@ void check_accuracy(Points& points) {
         checkPoints.push_back(Point(points[randId].coordinates, id++));
     }
     algorithmKnn.setPoints(checkPoints);
-    algorithmKnn.constructGraph();
+    algorithmKnn.constructGraph_reverseKNN();
 
     algorithmKnn_Naive.setPoints(checkPoints);
     algorithmKnn_Naive.constructGraph_Naive();
@@ -183,8 +138,8 @@ int sift_test1B() {
 
     size_t qsize = 10000;
     size_t vecdim = 128;
-    char *path_q = "../bigann/bigann_query.bvecs";
-    char *path_data = "../bigann/bigann_base.bvecs";
+    std::string path_q = "../bigann/bigann_query.bvecs";
+    std::string path_data = "../bigann/bigann_base.bvecs";
     char path_gt[1024];
     sprintf(path_gt, "../bigann/gnd/idx_%dM.ivecs", subset_size_millions);
     auto *massb = new unsigned char[vecdim];
@@ -266,7 +221,10 @@ int sift_test1B() {
     size_t k = 1;
     std::cout << "count: " << algorithmKnn.getCallDistanceCounter() << std::endl;
 
-    check_accuracy2(points, queries,answers);
+    check_accuracy(points);
+
+    //check_accuracy2(points, queries,answers);
+
     std::cout << "Actual memory usage: " << getCurrentRSS() / 1000000 << " Mb \n";
     return 0;
 
