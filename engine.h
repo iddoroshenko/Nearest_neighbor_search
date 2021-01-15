@@ -91,7 +91,7 @@ public:
     void constructGraph_reverseKNN();
 
     // Using age of edges
-    Point findOneNearestNeighbor(const Point& newPoint);
+    Point findOneNearestNeighborUsingAge(const Point& newPoint);
 
     // nsw (msw)
     std::vector<int> findKNearestNeighbors(const Point& newPoint, int k = -1);
@@ -104,6 +104,10 @@ public:
     void addPoint(const Point& point);
 
     uint64_t getCallDistanceCounter() const;
+
+    std::vector<int> findKNearestNeighbors_Age(const Point& newPoint, int k = -1);
+
+    std::vector<int> findKNearestNeighbors_existingPoint(const Point& newPoint, int k = -1);
 };
 
 #endif //NEAREST_NEIGHBOR_SEARCH_ENGINE_H

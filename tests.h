@@ -80,7 +80,7 @@ void check_accuracy(Points& points) {
         checkPoints.push_back(Point(points[randId].coordinates, id++));
     }
     algorithmKnn.setPoints(checkPoints);
-    algorithmKnn.constructGraph_reverseKNN();
+    algorithmKnn.constructGraph();
 
     algorithmKnn_Naive.setPoints(checkPoints);
     algorithmKnn_Naive.constructGraph_Naive();
@@ -114,7 +114,7 @@ void check_accuracy2(Points& points, const std::vector<std::vector<int>>& querie
         checkPoints.push_back(Point(points[i].coordinates, i));
     }
     algorithmKnn.setPoints(checkPoints);
-    algorithmKnn.constructGraph_reverseKNN();
+    algorithmKnn.constructGraph();
 
     long double accuracy = 0;
     for(int i = 0; i < NumPointsToCheck; i++) {
