@@ -68,12 +68,12 @@ public:
 };
 
 class AlgorithmKNN {
-private:
+protected:
     Distance distance;
     adjacency_list graph;
     Points points;
     int K = 5;
-private:
+protected:
     bool isPointTheNeighbor(const Point& newPoint, const Point& oldPoint, int k = -1);
 
 public:
