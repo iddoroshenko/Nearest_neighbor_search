@@ -1,18 +1,20 @@
 from __future__ import absolute_import
 import engineWrapper
 import numpy as np
-a = engineWrapper.Wrapper(5)
-f = open('../../sample.txt', 'r')
+from ann_benchmarks.algorithms.base import BaseANN
 
-l = [line.strip() for line in f]
 
-size = int(l[0])
+class engineWrapper(BaseANN):
+    def __init__(self, metric, method_param):
+        self.metric = metric
+        self.method_param = method_param
+        self.name = 'Our'
 
-X = []
-for line in l[1:]:
-    X.append(line.split(' '))
+    def fit(self, X):
+        self.p = engineWrapper.Wrapper(5)
+        X = np.asarray(X)
+        self.p.pySetPoints(X)
+        self.p.constructGraph()
 
-X = np.asarray(X)
-a.pySetPoints(X)
-a.constructGraph()
-print(a.pyFindKNearestNeighbors(np.asarray([[1000, 395]])))
+    def query(self, v, n):
+        return self.a.pyFindKNearestNeighbors(np.asarray(v), n)

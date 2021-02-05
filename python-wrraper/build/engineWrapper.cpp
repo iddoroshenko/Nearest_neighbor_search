@@ -13,7 +13,7 @@ public:
 
     void pySetPoints(py::object input);
 
-    py::array_t<int> pyFindKNearestNeighbors(py::object input);
+    py::array_t<int> pyFindKNearestNeighbors(py::object input, int k);
 
 };
 
@@ -34,7 +34,7 @@ void Wrapper::pySetPoints(py::object input) {
 
 }
 
-py::array_t<int> Wrapper::pyFindKNearestNeighbors(py::object input) {
+py::array_t<int> Wrapper::pyFindKNearestNeighbors(py::object input, int k) {
     py::array_t < int32_t , py::array::c_style | py::array::forcecast > items(input);
     auto buffer = items.request();
     int dim = buffer.shape[1];
@@ -47,7 +47,7 @@ py::array_t<int> Wrapper::pyFindKNearestNeighbors(py::object input) {
 
     py::buffer_info buf = result.request();
     int *ptr = static_cast<int *>(buf.ptr);
-    auto v = findKNearestNeighbors(newPoint);
+    auto v = findKNearestNeighbors(newPoint, k);
     for (int i = 0; i < 5; i++)
         ptr[i] = v[i];
     return result;
