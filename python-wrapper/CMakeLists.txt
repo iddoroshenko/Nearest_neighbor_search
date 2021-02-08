@@ -8,7 +8,7 @@ find_package(PythonInterp REQUIRED)
 include_directories(. ${PYTHON_INCLUDE_DIRS} ./.. build)
 
 add_subdirectory(pybind11)
-pybind11_add_module(engineWrapper build/engineWrapper.cpp ../engine.cpp)
+pybind11_add_module(enginewrapper build/enginewrapper.cpp ../engine.cpp)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
