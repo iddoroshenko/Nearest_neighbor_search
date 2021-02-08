@@ -2,8 +2,8 @@ FROM ann-benchmarks
 
 RUN apt-get install -y python-setuptools python-pip
 RUN pip3 install pybind11 numpy setuptools
-RUN cd /home/ilya/course3/Nearest_neighbor_search/python-wrraper/build
+RUN git clone https://github.com/iddoroshenko/Nearest_neighbor_search.git
 
-RUN python3 setup.py install
+RUN cd Nearest_neighbor_search/python-wrapper/build; python3 setup.py install
 
 RUN python3 -c 'import engineWrapper'

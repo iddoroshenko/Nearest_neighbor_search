@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-import enginewrapper
+import engineWrapper
 import numpy as np
 from ann_benchmarks.algorithms.base import BaseANN
 
