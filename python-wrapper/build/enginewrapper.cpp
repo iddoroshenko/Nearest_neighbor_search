@@ -43,12 +43,12 @@ py::array_t<int> Wrapper::pyFindKNearestNeighbors(py::object input, int k) {
     for(int j = 0; j < dim; ++j)
         newPoint.coordinates.push_back( vector_data[j] );
     newPoint.id = 0;
-    auto result = py::array_t<int>(5);
+    auto result = py::array_t<int>(k);
 
     py::buffer_info buf = result.request();
     int *ptr = static_cast<int *>(buf.ptr);
     auto v = findKNearestNeighbors(newPoint, k);
-    for (int i = 0; i < 5; i++)
+    for (int i = 0; i < k; i++)
         ptr[i] = v[i];
     return result;
 }

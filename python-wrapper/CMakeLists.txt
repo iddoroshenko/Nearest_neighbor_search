@@ -1,17 +1,10 @@
-cmake_minimum_required(VERSION 3.1.0)
-project(Nearest_neighbor_search VERSION 0.1.0)
-set (CMAKE_CXX_STANDARD 11)
-include(CTest)
-enable_testing()
+ cmake_minimum_required(VERSION 3.4...3.18)
+ project(cmake_example)
 
-find_package(PythonInterp REQUIRED)
-include_directories(. ${PYTHON_INCLUDE_DIRS} ./.. build)
+ include_directories(. ${PYTHON_INCLUDE_DIRS} ./.. build)
+ add_subdirectory(pybind11)
+ pybind11_add_module(cmake_example build/enginewrapper.cpp ../engine.cpp)
 
-add_subdirectory(pybind11)
-pybind11_add_module(engineWrapper build/enginewrapper.cpp ../engine.cpp)
-
-set(CPACK_PROJECT_NAME ${PROJECT_NAME})
-set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
-include(CPack)
-
-
+ # EXAMPLE_VERSION_INFO is defined by setup.py and passed into the C++ code as a
+ # define (VERSION_INFO) here.
+ target_compile_definitions(cmake_example PRIVATE VERSION_INFO=${EXAMPLE_VERSION_INFO})

@@ -5,16 +5,18 @@ from ann_benchmarks.algorithms.base import BaseANN
 
 
 class enginewrapper(BaseANN):
-    def __init__(self, metric, method_param):
+    def __init__(self, metric):
         self.metric = metric
-        self.method_param = method_param
         self.name = 'Our'
 
     def fit(self, X):
-        self.p = enginewrapper.Wrapper(5)
+        self.p = engineWrapper.Wrapper(5)
         X = np.asarray(X)
         self.p.pySetPoints(X)
         self.p.constructGraph()
 
     def query(self, v, n):
-        return self.a.pyFindKNearestNeighbors(np.asarray(v), n)
+        return self.p.pyFindKNearestNeighbors(np.asarray(v), n)
+
+    def set_query_arguments(self, ef):
+        pass
