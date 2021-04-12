@@ -4,8 +4,8 @@ from pybind11.setup_helpers import Pybind11Extension, build_ext
 
 ext_modules = [
       Pybind11Extension(
-            "python_example",
-            ['enginewrapper.cpp', 'engine.cpp']
+            "engineWrapper",
+            ['python_wrapper/enginewrapper.cpp', 'engine.cpp']
       ),
 ]
 
@@ -14,7 +14,7 @@ setup(name='engineWrapper',
       author="Nobody",
       description="""Install precompiled extension""",
       packages=[''],
-      package_data={'': ['engineWrapperPy.so']},
+      package_data={'': ['engineWrapper.so']},
       cmdclass={"build_ext": build_ext},
       ext_modules=ext_modules
       )
