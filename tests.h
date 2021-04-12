@@ -104,7 +104,6 @@ void check_accuracy(Points& points) {
 }
 
 void check_accuracy2(Points& points, const std::vector<std::vector<int>>& queries, const std::vector<std::vector<int>>& answers) {
-    AlgorithmKNN algorithmKnn_Naive;
     AlgorithmKNN algorithmKnn;
     const size_t NumPoints = points.size();
     const size_t NumPointsToCheck = queries.size();
@@ -132,7 +131,7 @@ void check_accuracy2(Points& points, const std::vector<std::vector<int>>& querie
 
 }
 
-void read_sift_test1B(Points& points, std::vector<std::vector<int>>& queries, std::vector<std::vector<int>>& answers) {
+int read_sift_test1B(Points& points, std::vector<std::vector<int>>& queries, std::vector<std::vector<int>>& answers) {
     int subset_size_millions = 1;
 
     size_t vecsize = subset_size_millions * 1000000;
@@ -167,7 +166,7 @@ void read_sift_test1B(Points& points, std::vector<std::vector<int>>& queries, st
     std::cout << "Loading queries:\n";
     std::ifstream inputQ(path_q, std::ios::binary);
 
-    queries.assign(qsize, std::vector<int>(vecidim));
+    queries.assign(qsize, std::vector<int>(vecdim));
     for (int i = 0; i < qsize; i++) {
         int in = 0;
         inputQ.read((char *) &in, 4);
@@ -192,7 +191,6 @@ void read_sift_test1B(Points& points, std::vector<std::vector<int>>& queries, st
     StopW stopw_full = StopW();
 
     AlgorithmKNN algorithmKnn(5);
-    Points points;
     points.reserve(vecsize);
 
     int pointId = 0;
@@ -214,55 +212,19 @@ void read_sift_test1B(Points& points, std::vector<std::vector<int>>& queries, st
         //algorithmKnn.addPoint(Point(std::vector<int>(mass, mass + vecdim), pointId++));
     }
     input.close();
-}
-
-void sift_test1B_toPython(Points& points, std::vector<std::vector<int>>& queries, std::vector<std::vector<int>>& answers) {
-    std::ostream file_points;
-    std::ostream file_queries;
-    std::ostream file_answer;
-    file_points.open("points.txt");
-    file_queries.open("queries.txt");
-    file_answer.open("answer.txt");
-    for(auto& point : points) {
-        for(int i = 0; i < point.coordinates.size(); i++) {
-            if(i + 1 == point.coordinates.size())
-                file_points << point[i];    
-            else 
-                file_points << point[i] << ",";
-        }
-    }
-    for(auto& point : queries) {
-        for(int i = 0; i < point.size(); i++) {
-            if(i + 1 == point.size())
-                file_queries << point[i];    
-            else 
-                file_queries << point[i] << ",";
-        }
-    }
-    for(auto& point : answer) {
-        for(int i = 0; i < point.size(); i++) {
-            if(i + 1 == point.size())
-                file_answer << point[i];    
-            else 
-                file_answer << point[i] << ",";
-        }
-    }
-    file_points.close();
-    file_queries.close();
-    file_answer.close();
+    return 0;
 }
 
 int sift_test1B() {
     Points points;
     std::vector<std::vector<int>> queries;
-    std::vector<std::vector<int>> answers);
-    read_sift_test1B(points, queries, answers);
+    std::vector<std::vector<int>> answers;
     
-    std::cout << "count: " << algorithmKnn.getCallDistanceCounter() << std::endl;
+    //std::cout << "count: " << algorithmKnn.getCallDistanceCounter() << std::endl;
+    read_sift_test1B(points,queries,answers);
+    //check_accuracy(points);
 
-    check_accuracy(points);
-
-    //check_accuracy2(points, queries,answers);
+    check_accuracy2(points, queries,answers);
 
     std::cout << "Actual memory usage: " << getCurrentRSS() / 1000000 << " Mb \n";
     return 0;

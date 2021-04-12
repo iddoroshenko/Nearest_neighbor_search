@@ -16,6 +16,7 @@ class enginewrapper(BaseANN):
         self.p.constructGraph()
 
     def query(self, v, n):
+        v = [v]
         return self.p.pyFindKNearestNeighbors(np.asarray(v), n)
 
     def set_query_arguments(self, ef):

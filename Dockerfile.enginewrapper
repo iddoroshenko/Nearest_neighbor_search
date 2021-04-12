@@ -1,0 +1,9 @@
+FROM ann-benchmarks
+
+RUN apt-get install -y python-setuptools python3-pip
+RUN pip3 install pybind11 numpy setuptools ansicolors
+RUN git clone https://github.com/iddoroshenko/Nearest_neighbor_search.git
+
+RUN cd Nearest_neighbor_search/python-wrapper/build; python3 setup.py install
+
+RUN python3 -c 'import engineWrapper'
