@@ -1,8 +1,8 @@
 import pandas as pd
 import numpy as np
 import sys
-# import python_wrapper.build.wrapper as w
-import python_wrapper.build.engineWrapper as ew
+# import python_wrapper.build.wrapper as wpython_wrapper/build/
+import python_wrapper.engineWrapper as ew
 from n2 import HnswIndex
 import hnswlib
 import nmslib
@@ -32,7 +32,7 @@ def load_sift1M():
 if __name__ == "__main__":
     k = 5
     xb, xq, gt = load_sift1M()
-    alg = ew.Wrapper(10)
+    alg = ew.Wrapper(5)
     X = np.asarray(xb)
 
     start = time.time()
@@ -48,7 +48,7 @@ if __name__ == "__main__":
     end = time.time()
     print(end - start)
     print('accuracy: ', accuracy / len(xq) / 5)
-
+'''
     f = 40
     start = time.time()
     t = HnswIndex(128)  # HnswIndex(f, "angular, L2, or dot")
@@ -95,4 +95,4 @@ if __name__ == "__main__":
     end = time.time()
     print(end - start)
     print('accuracy: ', accuracy / len(xq) / 5)
-
+'''

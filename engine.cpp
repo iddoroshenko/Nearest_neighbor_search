@@ -86,10 +86,10 @@ void AlgorithmKNN::constructGraph_reverseKNN() {
     for (int i = 0; i < allPoints.size(); ++i) {
         std::vector<int> knn = findKNearestNeighborsMultiStart(allPoints[i], 2*K);
         int counter = 0;
-        std::set<int> newEdges;
+        std::set<int> newEdges;/*
         for(int j = 0; j < std::min(size_t(K), knn.size()); ++j) {
             newEdges.insert(knn[j]);
-        }
+        }*/
         for (int x : knn) {
             if(isPointTheNeighbor(allPoints[i], allPoints[x])) {
                 newEdges.insert(x);
@@ -133,10 +133,10 @@ bool AlgorithmKNN::isPointTheNeighbor(const Point& newPoint, const Point& oldPoi
 
         topKNearestPoints.push(currentPoint);
         if(topKNearestPoints.size() == k + 1) {
-            if (topKNearestPoints.top().second == currentPoint.second) {
+            /*if (topKNearestPoints.top().second == currentPoint.second) {
                 topKNearestPoints.pop();
                 break;
-            }
+            }*/
             topKNearestPoints.pop();
         }
         for(const Edge& edge : graph[currentPoint.second]) {
@@ -181,10 +181,10 @@ std::vector<int> AlgorithmKNN::findKNearestNeighbors(const Point& newPoint, int 
 
         topKNearestPoints.push(currentPoint);
         if(topKNearestPoints.size() == k + 1) {
-            if (topKNearestPoints.top().second == currentPoint.second) {
+            /*if (topKNearestPoints.top().second == currentPoint.second) {
                 topKNearestPoints.pop();
                 break;
-            }
+            }*/
             topKNearestPoints.pop();
         }
         for(const Edge& edge : graph[currentPoint.second]) {
@@ -218,7 +218,7 @@ std::vector<int> AlgorithmKNN::findKNearestNeighborsMultiStart(const Point& newP
     }
     std::vector<std::pair<int,int>> t;
     t.reserve(counter.size());
-    for(const std::pair<const int,int>& x : counter) {
+    for(const std::pair<const int, int>& x : counter) {
         t.emplace_back(x.second, x.first);
     }
     std::sort(t.rbegin(), t.rend());
@@ -262,7 +262,7 @@ uint64_t AlgorithmKNN::getCallDistanceCounter() const {
 std::vector<int> AlgorithmKNN::findKNearestNeighbors_Age(const Point& newPoint, int k) {
     if(k == -1)
         k = K;
-    Point nearestPoint = findOneNearestNeighborUsingAge(newPoint);
+    //Point nearestPoint = findOneNearestNeighborUsingAge(newPoint);
     return findKNearestNeighbors_existingPoint(newPoint, k);
 }
 
@@ -322,10 +322,10 @@ std::vector<int> AlgorithmKNN::findKNearestNeighbors_existingPoint(const Point& 
 
         topKNearestPoints.push(currentPoint);
         if(topKNearestPoints.size() == k + 1) {
-            if (topKNearestPoints.top().second == currentPoint.second) {
+            /*if (topKNearestPoints.top().second == currentPoint.second) {
                 topKNearestPoints.pop();
                 break;
-            }
+            }*/
             topKNearestPoints.pop();
         }
         for(const Edge& edge : graph[currentPoint.second]) {

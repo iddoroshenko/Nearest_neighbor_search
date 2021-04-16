@@ -2,7 +2,7 @@
 // Created by ilya on 04.02.2021.
 //
 
-#include "python_wrapper/build/engine.h"
+#include "../engine.h"
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
 namespace py = pybind11;
