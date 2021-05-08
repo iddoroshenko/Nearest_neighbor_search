@@ -35,8 +35,8 @@ private:
 };
 
 struct Point {
-    uint32_t id{};
     std::vector<int> coordinates;
+    uint32_t id{};
 
     Point() = default;
     Point(std::vector<int> _coordinates, int _id) : coordinates(std::move(_coordinates)), id(_id) {}
@@ -70,14 +70,21 @@ public:
 class AlgorithmKNN {
 protected:
     Distance distance;
-    adjacency_list graph;
+    std::vector<adjacency_list> graph;
     Points points;
     int K = 5;
 protected:
-    bool isPointTheNeighbor(const Point& newPoint, const Point& oldPoint, int k = -1);
+    bool isPointTheNeighbor(const Point& newPoint, const Point& oldPoint, int k = -1, int numOfGraph = 1);
 
+private:
+    std::random_device rd;
+    std::mt19937 gen;
+    std::uniform_int_distribution<> distrib;
 public:
-    AlgorithmKNN(int newK = 5) : K(newK) {}
+    AlgorithmKNN(int newK = 5) : K(newK) {
+        gen = std::mt19937 (rd());
+        distrib = std::uniform_int_distribution<>(0);
+    }
 
     void setPoints(const Points& newPoints);
 
@@ -86,17 +93,14 @@ public:
     // Brute-force
     void constructGraph_Naive();
 
-    void constructGraph();
+    void constructGraph(int repeat = 1);
 
-    void constructGraph_reverseKNN();
+    void constructGraph_reverseKNN(int repeat = 1);
 
     // Using age of edges
-    Point findOneNearestNeighborUsingAge(const Point& newPoint);
+    Point findOneNearestNeighborUsingAge(const Point& newPoint, int numOfGraph = 1);
 
-    // nsw (msw)
-    std::vector<int> findKNearestNeighbors(const Point& newPoint, int k = -1);
-
-    std::vector<int> findKNearestNeighborsMultiStart(const Point& newPoint, int k = -1);
+    std::vector<int> findKNearestNeighborsMultiStart(const Point& newPoint, int k = -1, int repeat = 1, bool age = false, int numOfGraph = 1);
 
     // Brute-force
     std::vector<int> findKNearestNeighbors_Naive(const Point& newPoint);
@@ -105,9 +109,11 @@ public:
 
     uint64_t getCallDistanceCounter() const;
 
-    std::vector<int> findKNearestNeighbors_Age(const Point& newPoint, int k = -1);
+    std::vector<int> findKNearestNeighbors_Age(const Point& newPoint, int k = -1, bool age = false, int numOfGraph = 1);
 
-    std::vector<int> findKNearestNeighbors_existingPoint(const Point& newPoint, int k = -1);
+    std::vector<int> findKNearestNeighbors(const Point& newPoint, int k = -1, int numOfGraph = 1);
+
+    std::vector<int> findKNearestNeighbors_multiGraph(const Point& newPoint, int k = -1);
 };
 
 #endif //NEAREST_NEIGHBOR_SEARCH_ENGINE_H

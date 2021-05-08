@@ -145,9 +145,6 @@ class tqdm {
                     peta = 0;
                 }
 
-                double fills = ((double)curr / tot * width);
-                int ifills = (int)fills;
-
                 printf("\015 ");
                 if (use_colors) {
                     if (color_transition) {
@@ -159,9 +156,9 @@ class tqdm {
                         printf("\033[32m ");
                     }
                 }
-                for (int i = 0; i < ifills; i++) std::cout << bars[8];
-                if (!in_screen and (curr != tot)) printf("%s",bars[(int)(8.0*(fills-ifills))]);
-                for (int i = 0; i < width-ifills-1; i++) std::cout << bars[0];
+                //for (int i = 0; i < ifills; i++) std::cout << bars[8];
+                //if (!in_screen and (curr != tot)) printf("%s",bars[(int)(8.0*(fills-ifills))]);
+                //for (int i = 0; i < width-ifills-1; i++) std::cout << bars[0];
                 printf("%s ", right_pad.c_str());
                 if (use_colors) printf("\033[1m\033[31m");
                 printf("%4.1f%% ", pct);

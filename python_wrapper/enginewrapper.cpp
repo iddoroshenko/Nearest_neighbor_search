@@ -24,7 +24,7 @@ void Wrapper::pySetPoints(py::object input) {
     points.resize(buffer.shape[0]);
     int dim = buffer.shape[1];
     int id = 0;
-    for (int i = 0; i < points.size(); ++i) {
+    for (std::size_t i = 0; i < points.size(); ++i) {
         points[i].coordinates.resize(dim);
         const int* vector_data = items.data(i);
         for(int j = 0; j < dim; ++j)
@@ -47,7 +47,8 @@ py::array_t<int> Wrapper::pyFindKNearestNeighbors(py::object input, int k) {
 
     py::buffer_info buf = result.request();
     int *ptr = static_cast<int *>(buf.ptr);
-    auto v = findKNearestNeighbors(newPoint, k);
+    //auto v = findKNearestNeighborsMultiStart(newPoint, k, 1, false);
+    auto v = findKNearestNeighbors_multiGraph(newPoint, k);
     for (int i = 0; i < k; i++)
         ptr[i] = v[i];
     return result;
