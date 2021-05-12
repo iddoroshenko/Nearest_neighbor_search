@@ -21,25 +21,25 @@ def fvecs_read(fname):
 
 def load_sift1M():
     print("Loading sift...", end='', file=sys.stderr)
-    xb = fvecs_read("siftsmall/siftsmall_base.fvecs")
-    xq = fvecs_read("siftsmall/siftsmall_query.fvecs")
-    gt = ivecs_read("siftsmall/siftsmall_groundtruth.ivecs")
+    xb = fvecs_read("sift/sift_base.fvecs")
+    xq = fvecs_read("sift/sift_query.fvecs")
+    gt = ivecs_read("sift/sift_groundtruth.ivecs")
     print("done", file=sys.stderr)
 
     return xb, xq, gt
 
 
 if __name__ == "__main__":
-    # Mine
-
     k = 100
+
+    # Mine
     xb, xq, gt = load_sift1M()
     alg = ew.Wrapper(7)
     X = np.asarray(xb)
 
     start = time.time()
     alg.pySetPoints(X)
-    alg.constructGraph(2)
+    alg.constructGraph(1)
     accuracy = 0
     for i in range(len(xq)):
         ans = alg.pyFindKNearestNeighbors(np.asarray([xq[i]]), k)
@@ -53,7 +53,6 @@ if __name__ == "__main__":
     print('accuracy:', accuracy / len(xq) / k)
 
     # N2
-    f = 40
     start = time.time()
     t = HnswIndex(128)
     for i in range(len(xb)):

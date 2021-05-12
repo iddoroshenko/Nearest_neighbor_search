@@ -16,6 +16,7 @@
 #include <thread>
 #include <random>
 #include <unordered_map>
+#include <unordered_set>
 #include <queue>
 #include "tqdm.h"
 
@@ -59,7 +60,7 @@ private:
     void callCounterInc();
 
 public:
-    long double calculateEuclideanDistance (const Point& point1, const Point& point2);
+    uint32_t calculateEuclideanDistance (const Point& point1, const Point& point2);
 
     uint64_t getCallCounter() const;
 
