@@ -22,7 +22,7 @@
 
 struct Edge {
 public:
-    Edge(uint32_t _dest) : id(edgeNextId), dest(_dest), age(floor(std::log2(id))) {
+    Edge(uint32_t _dest, uint32_t _age) : id(edgeNextId), dest(_dest), age(_age) {
         maxAge = std::max(age,maxAge);
         ++edgeNextId;
     }
@@ -51,6 +51,7 @@ struct Point {
 
 using Points = std::vector<Point>;
 using adjacency_list = std::unordered_map<uint32_t, std::vector<Edge>>;
+using priority_min_queue = std::priority_queue<std::pair<uint32_t, int>, std::vector<std::pair<uint32_t, int>>, std::greater<std::pair<uint32_t, int>>>;
 
 class Distance {
 private:
@@ -71,11 +72,11 @@ public:
 class AlgorithmKNN {
 protected:
     Distance distance;
-    std::vector<adjacency_list> graph;
+    adjacency_list graph;
     Points points;
     int K = 5;
 protected:
-    bool isPointTheNeighbor(const Point& newPoint, const Point& oldPoint, int k = -1, int numOfGraph = 1);
+    bool isPointTheNeighbor(const Point& newPoint, const Point& oldPoint, int k = -1);
 
 private:
     std::random_device rd;
@@ -94,14 +95,14 @@ public:
     // Brute-force
     void constructGraph_Naive();
 
-    void constructGraph(int repeat = 1);
+    void constructGraph();
 
-    void constructGraph_reverseKNN(int repeat = 1);
+    void constructGraph_reverseKNN();
 
     // Using age of edges
-    Point findOneNearestNeighborUsingAge(const Point& newPoint, int numOfGraph = 1);
+    Point findOneNearestNeighborUsingAge(const Point& newPoint);
 
-    std::vector<int> findKNearestNeighborsMultiStart(const Point& newPoint, int k = -1, int repeat = 1, bool age = false, int numOfGraph = 1);
+    std::vector<int> findKNearestNeighborsMultiStart(const Point& newPoint, int k = -1, int repeat = 1, bool age = false);
 
     // Brute-force
     std::vector<int> findKNearestNeighbors_Naive(const Point& newPoint);
@@ -110,11 +111,12 @@ public:
 
     uint64_t getCallDistanceCounter() const;
 
-    std::vector<int> findKNearestNeighbors_Age(const Point& newPoint, int k = -1, bool age = false, int numOfGraph = 1);
+    std::priority_queue<std::pair<uint32_t, int>> findKNearestNeighbors_Age(const Point& newPoint, int k = -1, bool age = false);
 
-    std::vector<int> findKNearestNeighbors(const Point& newPoint, int k = -1, int numOfGraph = 1);
+    std::priority_queue<std::pair<uint32_t, int>> findKNearestNeighbors(const Point& newPoint, int k = -1);
 
-    std::vector<int> findKNearestNeighbors_multiGraph(const Point& newPoint, int k = -1);
+    std::pair<uint32_t, int> findOneNearestNeighbors(const Point& newPoint);
+
 };
 
 #endif //NEAREST_NEIGHBOR_SEARCH_ENGINE_H

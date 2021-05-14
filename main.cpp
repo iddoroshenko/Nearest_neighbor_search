@@ -10,7 +10,7 @@ void call_unitTests() {
 
 int main() {
     srand(time(nullptr));
-    call_unitTests();
+    //call_unitTests();
     //sift_test1B();
 /*
     Points points;
