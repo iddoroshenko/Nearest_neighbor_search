@@ -16,12 +16,15 @@ int& Point::operator[](uint32_t index) {
     return coordinates[index];
 }
 
-uint32_t Distance::calculateEuclideanDistance (const Point& point1, const Point& point2) {
+uint32_t Distance::calculateEuclideanDistance (Point& point1, Point& point2) {
     ++callCounter;
     uint32_t distance = 0;
-    std::size_t size = point1.coordinates.size();
+    std::size_t size = point1.coordinates.size()/4;
     for(std::size_t i = 0; i < size; ++i) {
-        distance += (point1[i] - point2[i]) * (point1[i] - point2[i]);
+        distance += (point1[i*4] - point2[i*4]) * (point1[i*4] - point2[i*4]);
+        distance += (point1[i*4+1] - point2[i*4+1]) * (point1[i*4+1] - point2[i*4+1]);
+        distance += (point1[i*4+2] - point2[i*4+2]) * (point1[i*4+2] - point2[i*4+2]);
+        distance += (point1[i*4+3] - point2[i*4+3]) * (point1[i*4+3] - point2[i*4+3]);
     }
     return distance;
 }
@@ -54,7 +57,7 @@ void AlgorithmKNN::constructGraph_Naive() {
         for(std::size_t j = 0; j < points.size(); ++j) {
             if(i == j) continue;
             nearestK.insert({distance.calculateEuclideanDistance(points[i], points[j]), points[j].id });
-            if(int(nearestK.size()) == K + 1) {
+            if(nearestK.size() == M + 1) {
                 nearestK.erase(prev(nearestK.end()));
             }
         }
@@ -68,10 +71,12 @@ void AlgorithmKNN::constructGraph_Naive() {
 void AlgorithmKNN::constructGraph() {
     tqdm bar;
     Points allPoints = points;
+    visitedPoints.resize(points.size()+1);
+    was = 0;
     points.clear();
     uint32_t edge_age = 0;
     for (std::size_t i = 0; i < allPoints.size(); ++i) {
-        std::vector<int> knn = findKNearestNeighborsMultiStart(allPoints[i], K, 2, false);
+        std::vector<int> knn = findKNearestNeighborsMultiStart(allPoints[i], M, ef_construction, rt);
         for (int x : knn) {
             graph[allPoints[i].id].push_back(Edge(allPoints[x].id, 0));
             graph[allPoints[x].id].push_back(Edge(allPoints[i].id, 0));
@@ -86,27 +91,29 @@ void AlgorithmKNN::constructGraph() {
 void AlgorithmKNN::constructGraph_reverseKNN() {
     tqdm bar;
     Points allPoints = points;
+    visitedPoints.resize(points.size()+1);
+    was = 0;
     uint32_t edge_age = 0;
     points.clear();
     for (std::size_t i = 0; i < allPoints.size(); ++i) {
-        std::vector<int> knn = findKNearestNeighborsMultiStart(allPoints[i], K, 3, false);
-        int counter = 0;
+        std::vector<int> knn = findKNearestNeighborsMultiStart(allPoints[i], 2*M, std::max(2*M, ef_construction), rt);
+        std::size_t counter = 0;
         std::set<int> newEdges;
-        for (std::size_t j = 0; j < std::min(size_t(K), knn.size()); ++j) {
+        for (std::size_t j = 0; j < std::min(size_t(M), knn.size()); ++j) {
             newEdges.insert(knn[j]);
         }
         for (auto j : newEdges) {
-            graph[allPoints[i].id].push_back(Edge(allPoints[j].id, floor(std::log2(edge_age))));
-            graph[allPoints[j].id].push_back(Edge(allPoints[i].id, floor(std::log2(edge_age))));
+            graph[allPoints[i].id].push_back(Edge(allPoints[j].id, 0));
+            graph[allPoints[j].id].push_back(Edge(allPoints[i].id, 0));
         }
         newEdges.clear();
-        for (std::size_t j = std::min(size_t(K), knn.size()); j < knn.size(); ++j) {
-            if (isPointTheNeighbor(allPoints[i], allPoints[knn[j]], K)) {
+        for (std::size_t j = std::min(size_t(M), knn.size()); j < knn.size(); ++j) {
+            if (isPointTheNeighbor(allPoints[i], allPoints[knn[j]], M)) {
                 newEdges.insert(knn[j]);
                 ++counter;
                 //break;
             }
-            if (counter == K)
+            if (counter == M)
                 break;
         }
 
@@ -120,22 +127,20 @@ void AlgorithmKNN::constructGraph_reverseKNN() {
     std::cout << std::endl << "distance func call count: " << distance.getCallCounter() << std::endl;
 }
 
-bool AlgorithmKNN::isPointTheNeighbor(const Point& newPoint, const Point& oldPoint, int k) {
+bool AlgorithmKNN::isPointTheNeighbor(Point& newPoint, Point& oldPoint, std::size_t k) {
     if (points.empty())
         return {};
-    if (k == -1)
-        k = K;
     std::size_t indexStartPoint = oldPoint.id;
 
-    graph[indexStartPoint].push_back(Edge(newPoint.id, floor(std::log2(0))));
+    graph[indexStartPoint].push_back(Edge(newPoint.id, 0));
 
     uint32_t dist = distance.calculateEuclideanDistance(points[indexStartPoint], newPoint);
 
     priority_min_queue candidates;
     candidates.push({dist, indexStartPoint});
 
-    std::unordered_map<std::size_t,int> visitedPoints;
-    visitedPoints[indexStartPoint] = 1;
+    ++was;
+    visitedPoints[indexStartPoint] = was;
 
     std::priority_queue<std::pair<uint32_t, std::size_t>> topKNearestPoints;
 
@@ -144,7 +149,7 @@ bool AlgorithmKNN::isPointTheNeighbor(const Point& newPoint, const Point& oldPoi
         candidates.pop();
 
         topKNearestPoints.push(currentPoint);
-        if(int(topKNearestPoints.size()) == k + 1) {
+        if(topKNearestPoints.size() == k + 1) {
             if (topKNearestPoints.top().second == currentPoint.second) {
                 topKNearestPoints.pop();
                 break;
@@ -152,8 +157,8 @@ bool AlgorithmKNN::isPointTheNeighbor(const Point& newPoint, const Point& oldPoi
             topKNearestPoints.pop();
         }
         for(const Edge& edge : graph[currentPoint.second]) {
-            if(!visitedPoints[edge.dest]) {
-                visitedPoints[edge.dest] = 1;
+            if(visitedPoints[edge.dest] != was) {
+                visitedPoints[edge.dest] = was;
                 dist = distance.calculateEuclideanDistance(points[edge.dest], newPoint);
                 candidates.push({dist, edge.dest});
             }
@@ -172,116 +177,50 @@ bool AlgorithmKNN::isPointTheNeighbor(const Point& newPoint, const Point& oldPoi
 }
 
 
-std::vector<int> AlgorithmKNN::findKNearestNeighborsMultiStart(const Point& newPoint, int k, int repeat, bool age) {
-    if(k == -1)
-        k = K;
-    std::unordered_set<int> nearest_points;
-    for(int i = 0; i < repeat; ++i) {
-        std::priority_queue<std::pair<uint32_t, int>> x = findKNearestNeighbors(newPoint, k);
+std::vector<int> AlgorithmKNN::findKNearestNeighborsMultiStart(Point& newPoint, std::size_t k, std::size_t _ef, std::size_t repeat) {
+    std::vector<std::pair<uint32_t, int>> dists;
+    dists.reserve(repeat * _ef);
+    for(std::size_t i = 0; i < repeat; ++i) {
+        std::priority_queue<std::pair<uint32_t, int>> x = findKNearestNeighbors(newPoint, _ef);
         while(!x.empty()){
             auto& point = x.top();
-            nearest_points.insert(point.second);
+            dists.push_back(point);
             x.pop();
         }
     }
-    std::vector<std::pair<uint32_t,int>> dists;
-    dists.reserve(nearest_points.size());
-    for (int x : nearest_points) {
-        dists.emplace_back(distance.calculateEuclideanDistance(points[x], newPoint), x);
-    }
     std::sort(dists.begin(), dists.end());
+    std::unique(dists.begin(), dists.end());
     std::vector<int> result(std::min(size_t(k), dists.size()));
     for(std::size_t i = 0; i < std::min(size_t(k), dists.size()); ++i) {
         result[i] = dists[i].second;
     }
     return result;
-
 }
 
-std::vector<int> AlgorithmKNN::findKNearestNeighbors_Naive(const Point& newPoint) {
+std::vector<int> AlgorithmKNN::findKNearestNeighbors_Naive(Point& newPoint) {
     priority_min_queue topKNearestPoints;
 
     for(std::size_t i = 0; i < points.size(); ++i) {
         topKNearestPoints.push({distance.calculateEuclideanDistance(newPoint, points[i]), i});
     }
 
-    std::vector<int> result(K);
-    for(std::size_t i = 0; i < std::min(size_t(K),topKNearestPoints.size()); i++){
+    std::vector<int> result(M);
+    for(std::size_t i = 0; i < std::min(size_t(M),topKNearestPoints.size()); i++){
         result[i] = topKNearestPoints.top().second;
         topKNearestPoints.pop();
     }
     return result;
 }
 
-void AlgorithmKNN::addPoint(const Point& point) {
-    /*std::vector<int> knn = findKNearestNeighbors(point);
-    for(int x : knn) {
-        graph[point.id].push_back(Edge(points[x].id));
-        graph[points[x].id].push_back(Edge(point.id));
-    }*/
-    points.push_back(point);
-}
-
-uint64_t AlgorithmKNN::getCallDistanceCounter() const {
-    return distance.getCallCounter();
-}
-
-std::priority_queue<std::pair<uint32_t, int>> AlgorithmKNN::findKNearestNeighbors_Age(const Point& newPoint, int k, bool age) {
-    if(k == -1)
-        k = K;
-    return age ? findKNearestNeighbors(findOneNearestNeighborUsingAge(newPoint), k) :
-           findKNearestNeighbors(newPoint, k);
-}
-
-
-Point AlgorithmKNN::findOneNearestNeighborUsingAge(const Point& newPoint) {
+std::priority_queue<std::pair<uint32_t, int>> AlgorithmKNN::findKNearestNeighbors(Point& newPoint, std::size_t k) {
     if (points.empty())
         return {};
-    std::size_t indexCurPoint = distrib(gen) % points.size();
-    uint32_t curAge = 1;
-    uint32_t curDistance = distance.calculateEuclideanDistance(newPoint, points[indexCurPoint]);
-    while(true) {
-        bool newPointFounded = false;
-        std::vector<Edge> goodEdges;
-        for(const Edge& edge : graph[indexCurPoint]) {
-            if(edge.age >= curAge) {
-                goodEdges.push_back(edge);
-            }
-        }
-        std::sort(goodEdges.begin(), goodEdges.end(), [](const Edge& a, const Edge& b) { return a.age < b.age; });
-        for(const Edge& edge : goodEdges) {
-            uint32_t dist = distance.calculateEuclideanDistance(newPoint, points[edge.dest]);
-            if(dist < curDistance) {
-                indexCurPoint = edge.dest;
-                curDistance = dist;
-                curAge = edge.age;
-                newPointFounded = true;
-                //break;
-            }
-        }
-        if(!newPointFounded) {
-            break;
-        }
-    }
-    return points[indexCurPoint];
-}
-
-std::priority_queue<std::pair<uint32_t, int>> AlgorithmKNN::findKNearestNeighbors(const Point& newPoint, int k) {
-    if (points.empty())
-        return {};
-    if (k == -1)
-        k = K;
-    //std::vector<int> dist_delta;
-    //std::vector<int> age_delta;
-    //std::size_t indexStartPoint = distrib(gen) % points.size();
     std::size_t indexStartPoint = findOneNearestNeighbors(newPoint).second;
     uint32_t dist = distance.calculateEuclideanDistance(points[indexStartPoint], newPoint);
-    //dist_delta.push_back(dist);
     priority_min_queue candidates;
     candidates.push({dist, indexStartPoint});
-
-    std::unordered_map<std::size_t,uint8_t> visitedPoints;
-    visitedPoints[indexStartPoint] = 1;
+    ++was;
+    visitedPoints[indexStartPoint] = was;
 
     std::priority_queue<std::pair<uint32_t, int>> topKNearestPoints;
 
@@ -290,43 +229,26 @@ std::priority_queue<std::pair<uint32_t, int>> AlgorithmKNN::findKNearestNeighbor
         candidates.pop();
 
         topKNearestPoints.push(currentPoint);
-        if(int(topKNearestPoints.size()) == k + 1) {
+        if(topKNearestPoints.size() == k + 1) {
             if (topKNearestPoints.top().second == currentPoint.second) {
                 topKNearestPoints.pop();
                 break;
             }
             topKNearestPoints.pop();
-        }/*
-        std::sort(graph[currentPoint.second].begin(), graph[currentPoint.second].end(),
-                  [](const Edge& a, const Edge& b) {
-                            return a.age > b.age;
-                        }
-         );*/
+        }
         for(const Edge& edge : graph[currentPoint.second]) {
-            if(!visitedPoints[edge.dest]) {
-                visitedPoints[edge.dest] = 1;
+            if(visitedPoints[edge.dest] != was) {
+                visitedPoints[edge.dest] = was;
                 dist = distance.calculateEuclideanDistance(points[edge.dest], newPoint);
-                //dist_delta.emplace_back(dist);
-                //age_delta.emplace_back(edge.age);
-                //if(dist < topKNearestPoints.top().first)
                 candidates.push({dist, edge.dest});
             }
         }
     }
-/*
-    std::ofstream output_file;
-    output_file.open("age_delta.txt", std::fstream::app);
-    for(auto& x : age_delta) {
-        output_file << x << " ";
-    }
-    output_file << "\n";
-    output_file.close();
-*/
     return topKNearestPoints;
 }
 
 
-std::pair<uint32_t, int> AlgorithmKNN::findOneNearestNeighbors(const Point& newPoint) {
+std::pair<uint32_t, int> AlgorithmKNN::findOneNearestNeighbors(Point& newPoint) {
     if (points.empty())
         return {};
     std::size_t indexStartPoint = distrib(gen) % points.size();
@@ -334,14 +256,14 @@ std::pair<uint32_t, int> AlgorithmKNN::findOneNearestNeighbors(const Point& newP
     std::pair<uint32_t, int> candidate;
     candidate = {dist, indexStartPoint};
 
-    std::unordered_map<std::size_t,uint8_t> visitedPoints;
-    visitedPoints[indexStartPoint] = 1;
+    ++was;
+    visitedPoints[indexStartPoint] = was;
 
     while(true) {
         std::pair<uint32_t, int> currentPoint = candidate;
         for(const Edge& edge : graph[currentPoint.second]) {
-            if(!visitedPoints[edge.dest]) {
-                visitedPoints[edge.dest] = 1;
+            if(visitedPoints[edge.dest] != was) {
+                visitedPoints[edge.dest] = was;
                 dist = distance.calculateEuclideanDistance(points[edge.dest], newPoint);
                 if(dist < candidate.first) {
                     candidate = {dist, edge.dest};

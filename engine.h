@@ -18,6 +18,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <queue>
+#include <boost/functional/hash.hpp>
 #include "tqdm.h"
 
 struct Edge {
@@ -61,7 +62,7 @@ private:
     void callCounterInc();
 
 public:
-    uint32_t calculateEuclideanDistance (const Point& point1, const Point& point2);
+    uint32_t calculateEuclideanDistance (Point& point1, Point& point2);
 
     uint64_t getCallCounter() const;
 
@@ -74,16 +75,28 @@ protected:
     Distance distance;
     adjacency_list graph;
     Points points;
-    int K = 5;
+    std::size_t M;
+    std::size_t ef_construction;
+    std::size_t rt;
 protected:
-    bool isPointTheNeighbor(const Point& newPoint, const Point& oldPoint, int k = -1);
+    bool isPointTheNeighbor(Point& newPoint, Point& oldPoint, std::size_t k);
 
 private:
     std::random_device rd;
     std::mt19937 gen;
     std::uniform_int_distribution<> distrib;
+    std::vector<int> visitedPoints;
+    int was ;
 public:
-    AlgorithmKNN(int newK = 5) : K(newK) {
+    AlgorithmKNN(std::size_t newM = 5, int _ef_construction = -1, int _rt = -1) : M(newM) {
+        if (_ef_construction == -1)
+            ef_construction = M;
+        else
+            ef_construction = _ef_construction;
+        if (_rt == -1)
+            rt = 2;
+        else
+            rt = _rt;
         gen = std::mt19937 (rd());
         distrib = std::uniform_int_distribution<>(0);
     }
@@ -99,23 +112,14 @@ public:
 
     void constructGraph_reverseKNN();
 
-    // Using age of edges
-    Point findOneNearestNeighborUsingAge(const Point& newPoint);
-
-    std::vector<int> findKNearestNeighborsMultiStart(const Point& newPoint, int k = -1, int repeat = 1, bool age = false);
+    std::vector<int> findKNearestNeighborsMultiStart(Point& newPoint, std::size_t k, std::size_t _ef, std::size_t repeat = 3);
 
     // Brute-force
-    std::vector<int> findKNearestNeighbors_Naive(const Point& newPoint);
+    std::vector<int> findKNearestNeighbors_Naive(Point& newPoint);
 
-    void addPoint(const Point& point);
+    std::priority_queue<std::pair<uint32_t, int>> findKNearestNeighbors(Point& newPoint, std::size_t k);
 
-    uint64_t getCallDistanceCounter() const;
-
-    std::priority_queue<std::pair<uint32_t, int>> findKNearestNeighbors_Age(const Point& newPoint, int k = -1, bool age = false);
-
-    std::priority_queue<std::pair<uint32_t, int>> findKNearestNeighbors(const Point& newPoint, int k = -1);
-
-    std::pair<uint32_t, int> findOneNearestNeighbors(const Point& newPoint);
+    std::pair<uint32_t, int> findOneNearestNeighbors(Point& newPoint);
 
 };
 

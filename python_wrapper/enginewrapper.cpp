@@ -8,8 +8,9 @@
 namespace py = pybind11;
 
 class Wrapper : public AlgorithmKNN {
+    int ef;
 public:
-    Wrapper(int newK = 5) : AlgorithmKNN(newK) {};
+    Wrapper(int newK = 5, int ef_construction = -1, int _ef = -1, int rt = -1) : AlgorithmKNN(newK, ef_construction, rt), ef(_ef) {};
 
     void pySetPoints(py::object input);
 
@@ -47,7 +48,7 @@ py::array_t<int> Wrapper::pyFindKNearestNeighbors(py::object input, int k) {
 
     py::buffer_info buf = result.request();
     int *ptr = static_cast<int *>(buf.ptr);
-    auto v = findKNearestNeighborsMultiStart(newPoint, k, 3, false);
+    auto v = findKNearestNeighborsMultiStart(newPoint, k, ef, 3);
     for (int i = 0; i < k; i++)
         ptr[i] = v[i];
     return result;
@@ -56,7 +57,7 @@ py::array_t<int> Wrapper::pyFindKNearestNeighbors(py::object input, int k) {
 PYBIND11_MODULE(engineWrapper, m) {
 
 py::class_<Wrapper>(m, "Wrapper")
-.def(py::init<int>())
+.def(py::init<int,int,int,int>())
 .def("constructGraph", &Wrapper::constructGraph)
 .def("constructGraph_reverseKNN", &Wrapper::constructGraph_reverseKNN)
 .def("pySetPoints", &Wrapper::pySetPoints)
