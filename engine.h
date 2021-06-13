@@ -86,6 +86,7 @@ private:
     std::mt19937 gen;
     std::uniform_int_distribution<> distrib;
     std::vector<int> visitedPoints;
+    std::vector<uint32_t> calculated_distance;
     int was ;
 public:
     AlgorithmKNN(std::size_t newM = 5, int _ef_construction = -1, int _rt = -1) : M(newM) {
@@ -120,6 +121,8 @@ public:
     std::priority_queue<std::pair<uint32_t, int>> findKNearestNeighbors(Point& newPoint, std::size_t k);
 
     std::pair<uint32_t, int> findOneNearestNeighbors(Point& newPoint);
+
+    int get_counter(){ return distance.getCallCounter();}
 
 };
 

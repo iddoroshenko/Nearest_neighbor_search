@@ -117,7 +117,7 @@ void check_accuracy2(Points& points, const std::vector<std::vector<int>>& querie
 
     long double accuracy = 0;
     for(int i = 0; i < NumPointsToCheck; i++) {
-        auto v1 = algorithmKnn.findKNearestNeighborsMultiStart(Point(queries[i], i));
+        auto v1 = algorithmKnn.findKNearestNeighbors_multiGraph(Point(queries[i], i), 5);
 
         std::unordered_set<int> pp(answers[i].begin(), answers[i].end());
         for(auto x : v1) {

@@ -16,6 +16,10 @@ public:
 
     py::array_t<int> pyFindKNearestNeighbors(py::object input, int k);
 
+    void pySetEf(int _ef);
+
+    int pyGet_counter();
+
 };
 
 
@@ -48,10 +52,19 @@ py::array_t<int> Wrapper::pyFindKNearestNeighbors(py::object input, int k) {
 
     py::buffer_info buf = result.request();
     int *ptr = static_cast<int *>(buf.ptr);
-    auto v = findKNearestNeighborsMultiStart(newPoint, k, ef, 3);
+    distance.resetCallCounter();
+    auto v = findKNearestNeighborsMultiStart(newPoint, k, ef, 1);
     for (int i = 0; i < k; i++)
         ptr[i] = v[i];
     return result;
+}
+
+void Wrapper::pySetEf(int _ef) {
+    ef = _ef;
+}
+
+int Wrapper::pyGet_counter() {
+    return get_counter();
 }
 
 PYBIND11_MODULE(engineWrapper, m) {
@@ -61,5 +74,7 @@ py::class_<Wrapper>(m, "Wrapper")
 .def("constructGraph", &Wrapper::constructGraph)
 .def("constructGraph_reverseKNN", &Wrapper::constructGraph_reverseKNN)
 .def("pySetPoints", &Wrapper::pySetPoints)
-.def("pyFindKNearestNeighbors", &Wrapper::pyFindKNearestNeighbors);
+.def("pyFindKNearestNeighbors", &Wrapper::pyFindKNearestNeighbors)
+.def("pySetEf", &Wrapper::pySetEf)
+.def("get_counter", &Wrapper::pyGet_counter);
 }

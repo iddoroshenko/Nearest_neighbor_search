@@ -72,20 +72,25 @@ void AlgorithmKNN::constructGraph() {
     tqdm bar;
     Points allPoints = points;
     visitedPoints.resize(points.size()+1);
+    calculated_distance.resize(points.size()+1);
     was = 0;
     points.clear();
     uint32_t edge_age = 0;
     for (std::size_t i = 0; i < allPoints.size(); ++i) {
         std::vector<int> knn = findKNearestNeighborsMultiStart(allPoints[i], M, ef_construction, rt);
         for (int x : knn) {
-            graph[allPoints[i].id].push_back(Edge(allPoints[x].id, 0));
-            graph[allPoints[x].id].push_back(Edge(allPoints[i].id, 0));
+            graph[allPoints[i].id].push_back(Edge(allPoints[x].id, floor(allPoints[i].id / 1000)));
+            graph[allPoints[x].id].push_back(Edge(allPoints[i].id, floor(allPoints[i].id / 1000)));
             ++edge_age;
         }
         points.push_back(allPoints[i]);
         bar.progress(int(i), int(allPoints.size()));
     }
     std::cout << std::endl << "distance func call count: " << distance.getCallCounter() << std::endl;
+    distance.resetCallCounter();
+    for (auto& x : graph) {
+        sort(x.second.begin(), x.second.end(), [](const Edge& a, const Edge& b) { return a.age > b.age; });
+    }
 }
 
 void AlgorithmKNN::constructGraph_reverseKNN() {
@@ -178,23 +183,17 @@ bool AlgorithmKNN::isPointTheNeighbor(Point& newPoint, Point& oldPoint, std::siz
 
 
 std::vector<int> AlgorithmKNN::findKNearestNeighborsMultiStart(Point& newPoint, std::size_t k, std::size_t _ef, std::size_t repeat) {
-    std::vector<std::pair<uint32_t, int>> dists;
-    dists.reserve(repeat * _ef);
-    for(std::size_t i = 0; i < repeat; ++i) {
-        std::priority_queue<std::pair<uint32_t, int>> x = findKNearestNeighbors(newPoint, _ef);
-        while(!x.empty()){
-            auto& point = x.top();
-            dists.push_back(point);
-            x.pop();
-        }
+    std::vector<int> dists;
+    std::priority_queue<std::pair<uint32_t, int>> x = findKNearestNeighbors(newPoint, _ef);
+    while(x.size() > k)
+        x.pop();
+    int n = std::min(k, x.size());
+    dists.resize(n);
+    for (int i = n-1; i >= 0; i--) {
+        dists[i] = x.top().second;
+        x.pop();
     }
-    std::sort(dists.begin(), dists.end());
-    std::unique(dists.begin(), dists.end());
-    std::vector<int> result(std::min(size_t(k), dists.size()));
-    for(std::size_t i = 0; i < std::min(size_t(k), dists.size()); ++i) {
-        result[i] = dists[i].second;
-    }
-    return result;
+    return dists;
 }
 
 std::vector<int> AlgorithmKNN::findKNearestNeighbors_Naive(Point& newPoint) {
@@ -215,8 +214,9 @@ std::vector<int> AlgorithmKNN::findKNearestNeighbors_Naive(Point& newPoint) {
 std::priority_queue<std::pair<uint32_t, int>> AlgorithmKNN::findKNearestNeighbors(Point& newPoint, std::size_t k) {
     if (points.empty())
         return {};
-    std::size_t indexStartPoint = findOneNearestNeighbors(newPoint).second;
-    uint32_t dist = distance.calculateEuclideanDistance(points[indexStartPoint], newPoint);
+    std::pair<uint32_t, int> nearest_point = findOneNearestNeighbors(newPoint);
+    std::size_t indexStartPoint = nearest_point.second;
+    uint32_t dist = nearest_point.first;
     priority_min_queue candidates;
     candidates.push({dist, indexStartPoint});
     ++was;
@@ -236,11 +236,15 @@ std::priority_queue<std::pair<uint32_t, int>> AlgorithmKNN::findKNearestNeighbor
             }
             topKNearestPoints.pop();
         }
-        for(const Edge& edge : graph[currentPoint.second]) {
-            if(visitedPoints[edge.dest] != was) {
-                visitedPoints[edge.dest] = was;
-                dist = distance.calculateEuclideanDistance(points[edge.dest], newPoint);
-                candidates.push({dist, edge.dest});
+        for(auto edge = graph[currentPoint.second].begin(); edge != graph[currentPoint.second].end(); edge++) {
+            if(visitedPoints[edge->dest] != was) {
+                if(visitedPoints[edge->dest] == was-1) {
+                    dist = calculated_distance[edge->dest];
+                } else {
+                    dist = distance.calculateEuclideanDistance(points[edge->dest], newPoint);
+                }
+                visitedPoints[edge->dest] = was;
+                candidates.push({dist, edge->dest});
             }
         }
     }
@@ -251,22 +255,31 @@ std::priority_queue<std::pair<uint32_t, int>> AlgorithmKNN::findKNearestNeighbor
 std::pair<uint32_t, int> AlgorithmKNN::findOneNearestNeighbors(Point& newPoint) {
     if (points.empty())
         return {};
+    distance.resetCallCounter();
     std::size_t indexStartPoint = distrib(gen) % points.size();
     uint32_t dist = distance.calculateEuclideanDistance(points[indexStartPoint], newPoint);
+    calculated_distance[indexStartPoint] = dist;
     std::pair<uint32_t, int> candidate;
     candidate = {dist, indexStartPoint};
 
     ++was;
     visitedPoints[indexStartPoint] = was;
 
+    std::ofstream stream;
+    stream.open("dist.txt", std::ios::app);
+    int a = dist;
+
     while(true) {
         std::pair<uint32_t, int> currentPoint = candidate;
-        for(const Edge& edge : graph[currentPoint.second]) {
-            if(visitedPoints[edge.dest] != was) {
-                visitedPoints[edge.dest] = was;
-                dist = distance.calculateEuclideanDistance(points[edge.dest], newPoint);
+        for(auto edge = graph[currentPoint.second].rbegin(); edge != graph[currentPoint.second].rend(); edge++) {
+            if(visitedPoints[edge->dest] != was) {
+                visitedPoints[edge->dest] = was;
+                dist = distance.calculateEuclideanDistance(points[edge->dest], newPoint);
+                calculated_distance[edge->dest] = dist;
                 if(dist < candidate.first) {
-                    candidate = {dist, edge.dest};
+                    candidate = {dist, edge->dest};
+                    stream << a-dist << " " << edge->age <<  std::endl;
+                    a=dist;
                     break;
                 }
             }
@@ -274,5 +287,8 @@ std::pair<uint32_t, int> AlgorithmKNN::findOneNearestNeighbors(Point& newPoint) 
         if (currentPoint.second == candidate.second)
             break;
     }
+    //std::cout << "saad: " << distance.getCallCounter() << std::endl;
+    stream <<  std::endl;
+    distance.resetCallCounter();
     return candidate;
 }

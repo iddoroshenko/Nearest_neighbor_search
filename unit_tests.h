@@ -52,7 +52,7 @@ namespace tut
         algorithmKnn.setPoints(points);
         algorithmKnn.constructGraph();
 
-        std::vector<int> knn = algorithmKnn.findKNearestNeighbors(Point({1000, 395}, 0));
+        std::vector<int> knn = algorithmKnn.findKNearestNeighbors_multiGraph(Point({1000, 395}, 0),5);
         std::vector<int> sampleAnswer = {17, 23, 18, 19, 22};
         ensure(knn == sampleAnswer);
 
@@ -67,7 +67,7 @@ namespace tut
         algorithmKnn.setPoints(points);
         algorithmKnn.constructGraph_reverseKNN();
 
-        std::vector<int> knn = algorithmKnn.findKNearestNeighbors(Point({1000, 395}, 0));
+        std::vector<int> knn = algorithmKnn.findKNearestNeighbors_multiGraph(Point({1000, 395}, 0),5);
         std::vector<int> sampleAnswer = {17, 23, 18, 19, 22};
         ensure(knn == sampleAnswer);
 
